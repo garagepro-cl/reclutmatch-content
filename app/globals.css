@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0e0930;
+  --foreground: #edecf5;
+  --panel: #181048;
+  --panel-hover: #221a57;
+  --border: #2e2764;
+  --gold: #8840f8;
+  --gold-light: #a970ff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-panel: var(--panel);
+  --color-panel-hover: var(--panel-hover);
+  --color-line: var(--border);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --font-sans: var(--font-inter), system-ui, -apple-system, Arial, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), system-ui, -apple-system, Arial, sans-serif;
+}

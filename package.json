@@ -1,0 +1,46 @@
+{
+  "name": "reclutmatch-content",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "cross-env NODE_OPTIONS=--use-system-ca next dev",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=2560 next build",
+    "start": "cross-env NODE_OPTIONS=--use-system-ca next start",
+    "lint": "eslint",
+    "db:push": "prisma db push",
+    "seed": "tsx scripts/seed.ts",
+    "build:logo": "tsx scripts/build-logo.ts",
+    "generate": "tsx scripts/generate.ts",
+    "yt:auth": "tsx scripts/yt-auth.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
+    "@prisma/client": "^6.19.3",
+    "@resvg/resvg-js": "^2.6.2",
+    "ffmpeg-static": "^5.3.0",
+    "googleapis": "^173.0.0",
+    "grammy": "^1.44.0",
+    "lucide-react": "^1.24.0",
+    "next": "16.2.10",
+    "node-cron": "^4.5.0",
+    "pdf-lib": "^1.17.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "satori": "^0.26.0",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/node-cron": "^3.0.11",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10",
+    "prisma": "^6.19.3",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.0",
+    "typescript": "^5"
+  }
+}

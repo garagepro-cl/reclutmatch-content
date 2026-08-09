@@ -1,0 +1,18 @@
+# El destino de este codigo es un servidor Linux (/opt/reclutmatch-content). Sin
+# esto, git en Windows convierte a CRLF al hacer checkout y esos finales de linea
+# terminan subidos al servidor. Se fuerza LF en todo el arbol de trabajo.
+* text=auto eol=lf
+
+# Binarios: que git no intente convertir nada.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.mp3 binary
+*.mp4 binary
+*.db binary
+*.pdf binary

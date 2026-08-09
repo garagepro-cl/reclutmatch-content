@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Business {
+  id            String         @id @default(cuid())
+  slug          String         @unique
+  name          String
+  tagline       String         @default("")
+  description   String         @default("")
+  website       String         @default("")
+  instagram     String         @default("")
+  facebook      String         @default("")
+  phone         String         @default("")
+  ctaText       String         @default("")
+  brandJson     String         @default("{}")
+  topicsJson    String         @default("[]")
+  platformsJson String         @default("[\"instagram\",\"facebook\",\"youtube\"]")
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  pieces        ContentPiece[]
+}
+
+model ContentPiece {
+  id                String          @id @default(cuid())
+  businessId        String
+  business          Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  type              String // CAROUSEL | VIDEO
+  status            String          @default("DRAFT") // DRAFT | RENDERING | PENDING | APPROVED | PUBLISHED | REJECTED | FAILED
+  pillar            String          @default("")
+  customPrompt      String          @default("")
+  title             String
+  hook              String          @default("")
+  slidesJson        String          @default("[]")
+  caption           String          @default("")
+  hashtags          String          @default("")
+  source            String          @default("bank") // bank | ai
+  outputDir         String          @default("")
+  coverPath         String          @default("")
+  videoPath         String          @default("")
+  slideCount        Int             @default(0)
+  telegramMessageId String          @default("")
+  error             String          @default("")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  approvedAt        DateTime?
+  publishedAt       DateTime?
+  targets           PublishTarget[]
+}
+
+model PublishTarget {
+  id         String       @id @default(cuid())
+  pieceId    String
+  piece      ContentPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  platform   String // instagram | facebook | youtube
+  status     String       @default("PENDING") // PENDING | PUBLISHED | MANUAL_REQUIRED | FAILED
+  externalId String       @default("")
+  permalink  String       @default("")
+  error      String       @default("")
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model Setting {
+  key   String @id
+  value String
+}
