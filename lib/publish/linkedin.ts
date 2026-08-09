@@ -21,9 +21,20 @@ import type { PublishOutcome } from "./types";
 
 const API = "https://api.linkedin.com/rest";
 
-/** Versión mensual de la API de LinkedIn (header LinkedIn-Version) */
+/**
+ * Versión mensual de la API de LinkedIn (header LinkedIn-Version).
+ *
+ * OJO: LinkedIn sostiene cada versión de la Marketing API un año como mínimo y
+ * después la retira. Una versión dada de baja NO falla con un error claro:
+ * devuelve HTTP 426, que no dice nada. Estaba en "202506" (junio 2025), ya
+ * retirada — habría fallado apenas se cargaran las credenciales.
+ *
+ * Se revisa una vez al año contra la tabla de versiones soportadas:
+ * https://learn.microsoft.com/en-us/linkedin/marketing/versioning
+ * Se puede sobreescribir con LINKEDIN_VERSION en el .env sin tocar código.
+ */
 function apiVersion(): string {
-  return process.env.LINKEDIN_VERSION || "202506";
+  return process.env.LINKEDIN_VERSION || "202607";
 }
 
 function headers(token: string): Record<string, string> {
