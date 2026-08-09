@@ -126,6 +126,13 @@ function targetSummary(targets: { platform: string; status: string; permalink: s
   return lines.join("\n\n");
 }
 
+const COMANDOS =
+  "Comandos:\n" +
+  "/idea <texto> — anota una idea para la próxima pieza (varias líneas = varias ideas)\n" +
+  "/ideas — muestra la cola de ideas anotadas\n" +
+  "/generar [negocio] — crea una pieza ahora\n" +
+  "/id — muestra el id de este chat";
+
 function wire(b: Bot): void {
   b.command("start", async (ctx) => {
     const chatId = String(ctx.chat.id);
@@ -138,17 +145,110 @@ function wire(b: Bot): void {
       });
       await ctx.reply(
         "👋 ¡Listo! Este chat quedó registrado como dueño de ContentPilot.\n\n" +
-        "Aquí te llegarán los carruseles y videos para aprobar.\n" +
-        "Comandos: /generar [negocio] para crear contenido ahora.",
+        "Aquí te llegarán los carruseles para aprobar.\n\n" +
+        COMANDOS,
       );
     } else if (owner === chatId) {
-      await ctx.reply("Ya estás registrado ✅. Usa /generar para crear contenido ahora.");
+      await ctx.reply(`Ya estás registrado ✅\n\n${COMANDOS}`);
     } else {
       await ctx.reply("Este bot es privado.");
     }
   });
 
   b.command("id", (ctx) => ctx.reply(`Tu chat id: ${ctx.chat.id}`));
+
+  // Anotar ideas desde el celular. El generador les da prioridad por sobre lo
+  // que se le ocurra a la IA (ver getIdea en lib/ideas/index.ts).
+  b.command("idea", async (ctx) => {
+    const owner = await ownerChatId();
+    if (String(ctx.chat.id) !== owner) return;
+
+    const entrada = (ctx.match ?? "").trim();
+    if (!entrada) {
+      await ctx.reply(
+        "Escribe la idea después del comando.\n\n" +
+        "Ejemplo: `/idea el costo real de una mala contratación en una PYME`\n\n" +
+        "Puedes mandar varias de una vez, una por línea. Con /ideas ves la cola.",
+        { parse_mode: "Markdown" },
+      );
+      return;
+    }
+
+    const negocios = await prisma.business.findMany({ where: { active: true } });
+    if (negocios.length === 0) {
+      await ctx.reply("No hay negocios activos.");
+      return;
+    }
+
+    // Si la primera palabra es el slug de un negocio, la idea es para ese.
+    // Si no, y hay un solo negocio activo, se asume ese. Con varios, se pregunta.
+    const primera = entrada.split(/\s+/)[0].toLowerCase();
+    const porSlug = negocios.find((n) => n.slug.toLowerCase() === primera);
+    const negocio = porSlug ?? (negocios.length === 1 ? negocios[0] : null);
+    if (!negocio) {
+      await ctx.reply(
+        `¿Para cuál negocio? Ponlo antes de la idea:\n` +
+        negocios.map((n) => `\`/idea ${n.slug} tu idea acá\``).join("\n"),
+        { parse_mode: "Markdown" },
+      );
+      return;
+    }
+
+    const cuerpo = porSlug ? entrada.slice(primera.length).trim() : entrada;
+    // Cada línea es una idea aparte: es lo natural cuando uno pega una lista
+    // juntada en el celular.
+    const lineas = cuerpo
+      .split("\n")
+      .map((l) => l.replace(/^\s*[-*•\d.)]+\s*/, "").trim())
+      .filter((l) => l.length > 2)
+      .slice(0, 50);
+
+    if (lineas.length === 0) {
+      await ctx.reply("No alcancé a leer ninguna idea ahí. Escribe al menos tres letras.");
+      return;
+    }
+
+    await prisma.ideaPropia.createMany({
+      data: lineas.map((l) => ({ businessId: negocio.id, texto: l.slice(0, 500) })),
+    });
+    const enCola = await prisma.ideaPropia.count({
+      where: { businessId: negocio.id, usada: false },
+    });
+
+    await ctx.reply(
+      `✅ ${lineas.length === 1 ? "Idea anotada" : `${lineas.length} ideas anotadas`} ` +
+      `para *${mdEscape(negocio.name)}*.\n\n` +
+      `📋 Quedan ${enCola} en la cola. Salen por orden de llegada, ` +
+      `antes que cualquier idea que invente la IA.`,
+      { parse_mode: "Markdown" },
+    );
+  });
+
+  b.command("ideas", async (ctx) => {
+    const owner = await ownerChatId();
+    if (String(ctx.chat.id) !== owner) return;
+
+    const pendientes = await prisma.ideaPropia.findMany({
+      where: { usada: false },
+      orderBy: { createdAt: "asc" },
+      include: { business: true },
+      take: 20,
+    });
+    if (pendientes.length === 0) {
+      await ctx.reply(
+        "La cola de ideas está vacía — el generador va a inventar el tema solo.\n\n" +
+        "Para anotar una: `/idea tu idea acá`",
+        { parse_mode: "Markdown" },
+      );
+      return;
+    }
+    const lista = pendientes
+      .map((i, n) => `${n + 1}. ${mdEscape(i.texto.slice(0, 90))} _(${mdEscape(i.business.name)})_`)
+      .join("\n");
+    await ctx.reply(`📋 *Ideas en cola* (salen en este orden)\n\n${lista}`, {
+      parse_mode: "Markdown",
+    });
+  });
 
   b.command("generar", async (ctx) => {
     const owner = await ownerChatId();

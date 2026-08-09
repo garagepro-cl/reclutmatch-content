@@ -25,6 +25,24 @@ model Business {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   pieces        ContentPiece[]
+  ideas         IdeaPropia[]
+}
+
+/// Ideas que anota una persona para que el sistema las use cuando le toque publicar.
+/// La cola se consume por orden de llegada: la más antigua sin usar es la que sale primero.
+/// Cuando no queda ninguna, el sistema vuelve a inventar el tema solo, como antes.
+model IdeaPropia {
+  id         String    @id @default(cuid())
+  businessId String
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  texto      String
+  usada      Boolean   @default(false)
+  usadaAt    DateTime?
+  /// Título de la pieza que salió de esta idea, para poder mirar en qué se convirtió
+  resultado  String    @default("")
+  createdAt  DateTime  @default(now())
+
+  @@index([businessId, usada, createdAt])
 }
 
 model ContentPiece {
@@ -51,6 +69,11 @@ model ContentPiece {
   updatedAt         DateTime        @updatedAt
   approvedAt        DateTime?
   publishedAt       DateTime?
+  /// Ventana de veto: hora a la que la pieza se publica sola si nadie la frena.
+  /// Null = no tiene publicación automática (o alguien apretó "Esperar").
+  autoPublishAt     DateTime?
+  /// Cuándo se frenó la publicación automática, para saber que fue decisión de alguien.
+  vetoedAt          DateTime?
   targets           PublishTarget[]
 }
 

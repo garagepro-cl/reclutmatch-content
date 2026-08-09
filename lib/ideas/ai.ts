@@ -100,6 +100,7 @@ export async function generateIdeaWithAI(
   type: "CAROUSEL" | "VIDEO",
   recentTitles: string[],
   customPrompt?: string,
+  pilarForzado?: string,
 ): Promise<Idea> {
   const client = new Anthropic();
   const model = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
@@ -139,9 +140,16 @@ export async function generateIdeaWithAI(
       : "Genera UNA idea de video corto vertical tipo Reel (5 slides de texto animado). La primera slide es el gancho (pregunta o dato sorprendente), las siguientes desarrollan.";
   const cta = ` El cierre con llamado a la acción ("${business.ctaText}") se agrega automáticamente — no lo repitas en las slides.`;
 
+  // El pilar viene decidido desde afuera (rotación en lib/ideas/index.ts):
+  // dejando elegir a la IA, siempre volvía a los mismos dos de los cinco.
+  const pilarLine = !customPrompt?.trim() && pilarForzado
+    ? `\n\nPara esta pieza usa EXACTAMENTE este pilar de contenido: "${pilarForzado}". ` +
+      `Los demás pilares quedan para otros días — no los mezcles ni los sustituyas.`
+    : "";
+
   const prompt = customPrompt?.trim()
     ? `${format}${cta}\n\nEl usuario pidió específicamente este tema/enfoque — respétalo al pie de la letra, no lo cambies por otro pilar:\n"${customPrompt.trim()}"`
-    : `${format}${cta}`;
+    : `${format}${cta}${pilarLine}`;
 
   const avoid =
     recentTitles.length > 0
@@ -182,7 +190,9 @@ export async function generateIdeaWithAI(
   }));
 
   return {
-    pillar: parsed.pillar ?? "",
+    // El pilar guardado es el que decidió la rotación, no el que declare la IA:
+    // escribiéndolo a su manera rompía el conteo y un mismo pilar se contaba dos veces.
+    pillar: (!customPrompt?.trim() && pilarForzado) || parsed.pillar || "",
     type,
     title: parsed.title,
     hook: parsed.hook ?? "",
