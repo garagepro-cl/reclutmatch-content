@@ -34,6 +34,13 @@ export interface LinkedInCredentials {
   accessToken?: string;
   /** Alternativa a organizationId: publicar como perfil personal (urn:li:person:xxx) */
   personUrn?: string;
+  /**
+   * Opcionales, solo para `npm run probar-linkedin`: con ellos se puede
+   * preguntarle a LinkedIn si el token sigue vivo y qué permisos trae, en vez
+   * de descubrirlo cuando falla una publicación. Publicar no los necesita.
+   */
+  clientId?: string;
+  clientSecret?: string;
 }
 
 export interface YouTubeCredentials {
