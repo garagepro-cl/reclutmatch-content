@@ -1,0 +1,18 @@
+[Unit]
+Description=ReclutMatch: reintenta una publicacion de Instagram fallida
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=contentpilot
+Group=contentpilot
+WorkingDirectory=/opt/reclutmatch-content
+Environment=NODE_ENV=production
+Environment=TZ=America/Santiago
+ExecStart=/opt/reclutmatch-content/node_modules/.bin/tsx --env-file=/opt/reclutmatch-content/.env scripts/reintentar-instagram.ts
+# Instagram procesa el carrusel completo antes de publicar; con 8 laminas
+# puede tardar. El script espera hasta 60s por contenedor.
+TimeoutStartSec=600
+StandardOutput=journal
+StandardError=journal

@@ -13,7 +13,8 @@
     "generate": "tsx scripts/generate.ts",
     "yt:auth": "tsx scripts/yt-auth.ts",
     "probar-idea": "tsx scripts/probar-idea.ts",
-    "probar-linkedin": "tsx scripts/probar-linkedin.ts"
+    "probar-linkedin": "tsx scripts/probar-linkedin.ts",
+    "reintentar-ig": "tsx scripts/reintentar-instagram.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",

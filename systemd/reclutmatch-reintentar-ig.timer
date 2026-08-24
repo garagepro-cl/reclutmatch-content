@@ -1,0 +1,14 @@
+[Unit]
+Description=ReclutMatch: reintento de Instagram cada hora (una publicacion por vez)
+
+[Timer]
+# Cada hora en punto. El propio script se salta las horas fuera de 08:00-20:00
+# de Chile, asi que en la practica recupera de a una entre las 08 y las 19.
+# De a una y espaciadas: cuatro posts seguidos en el feed compiten entre si.
+OnCalendar=*-*-* *:00:00
+Unit=reclutmatch-reintentar-ig.service
+AccuracySec=1min
+Persistent=false
+
+[Install]
+WantedBy=timers.target
