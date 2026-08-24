@@ -26,6 +26,31 @@ const execFileAsync = promisify(execFile);
 export interface CarouselResult {
   files: string[];
   cover: string;
+  /**
+   * Aviso legible si la pieza salio peor de lo normal (por ejemplo, sin las
+   * imagenes de IA). Vacio o ausente = salio como corresponde.
+   */
+  avisoRender?: string;
+}
+
+/**
+ * Traduce los fallos de imagen a una frase que una persona entienda al vuelo,
+ * sin tener que entrar al journal del servidor.
+ */
+export function avisoDeImagenes(
+  intentos: number,
+  fallos: number,
+  motivo?: string,
+): string | undefined {
+  if (fallos === 0) return undefined;
+  const sinSaldo = /credit|balance|insufficient|quota|top up/i.test(motivo ?? "");
+  const cuantas =
+    fallos >= intentos
+      ? "sin ninguna de sus imagenes"
+      : `sin ${fallos} de sus ${intentos} imagenes`;
+  return sinSaldo
+    ? `Esta pieza salio ${cuantas}: se acabaron los creditos del generador de imagenes. Hay que recargar saldo antes de aprobarla.`
+    : `Esta pieza salio ${cuantas}. Fallo el generador: ${(motivo ?? "motivo desconocido").slice(0, 120)}`;
 }
 
 /** Máximo de imágenes generadas con IA por carrusel (control de costo) */
@@ -54,6 +79,9 @@ async function resolveImages(
 ): Promise<ResolvedImages> {
   const canGenerate = Boolean(process.env.KIE_API_KEY);
   let aiBudget = MAX_AI_IMAGES;
+  let intentosIA = 0;
+  let fallosIA = 0;
+  let motivoFallo: string | undefined;
 
   const resolveOne = async (
     photo?: string,
@@ -65,6 +93,7 @@ async function resolveImages(
     }
     if (prompt && canGenerate && aiBudget > 0) {
       aiBudget--;
+      intentosIA++;
       try {
         const bytes = await generateImage(styleWrap(prompt, business), {
           aspectRatio: "4:5",
@@ -72,6 +101,8 @@ async function resolveImages(
         });
         return await bytesToDataUrl(bytes);
       } catch (err) {
+        fallosIA++;
+        motivoFallo = err instanceof Error ? err.message : String(err);
         console.error("[render] Falló la generación de imagen IA:", err);
       }
     }
@@ -87,7 +118,7 @@ async function resolveImages(
       s.layout === "split" || (!s.layout && Boolean(s.photo || s.imagePrompt));
     slides.push(wantsImage ? await resolveOne(s.photo, s.imagePrompt) : undefined);
   }
-  return { cover, slides };
+  return { cover, slides, intentosIA, fallosIA, motivoFallo };
 }
 
 /**
@@ -104,7 +135,11 @@ export async function renderCarouselPremium(
   const images = await resolveImages(business, data);
   const elements = buildPremiumCarouselSlides(business, brand, data, images);
   const files = await renderElements(elements, CAROUSEL_W, CAROUSEL_H, outDir);
-  return { files, cover: files[0] };
+  return {
+    files,
+    cover: files[0],
+    avisoRender: avisoDeImagenes(images.intentosIA, images.fallosIA, images.motivoFallo),
+  };
 }
 
 /** Renderiza el carrusel completo (portada + contenido + CTA) a PNGs 1080×1350 */

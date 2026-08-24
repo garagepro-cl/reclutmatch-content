@@ -81,7 +81,14 @@ export async function notifyPendingPiece(piece: PieceWithBusiness): Promise<void
     await b.api.sendVideo(chat, new InputFile(path.join(dir, piece.videoPath)));
   }
 
+  // El aviso va ARRIBA del todo: en el celular la miniatura no delata que la
+  // pieza salio sin imagenes, y se termina aprobando a ciegas. Paso el 21-ago.
+  const aviso = piece.renderWarning
+    ? `⚠️ *OJO — revisa las imagenes antes de aprobar*\n${mdEscape(piece.renderWarning)}\n\n`
+    : "";
+
   const text =
+    aviso +
     `🆕 ${typeLabel(piece.type)} para *${mdEscape(piece.business.name)}*\n\n` +
     `📌 *${mdEscape(piece.title)}*\n` +
     (piece.pillar ? `🏷 ${mdEscape(piece.pillar)}\n` : "") +

@@ -28,6 +28,16 @@ export interface PremiumRenderData {
 export interface ResolvedImages {
   cover?: string;
   slides: (string | undefined)[];
+  /**
+   * Cuantas imagenes se intentaron generar con IA y cuantas fallaron. Sin esto
+   * el fallo moria en un console.error del journal: la pieza salia sin fondo,
+   * el aviso de Telegram decia "listo para aprobar" como siempre, y en la
+   * miniatura del celular no se nota. Paso el 21-ago-2026 y se publico.
+   */
+  intentosIA: number;
+  fallosIA: number;
+  /** Mensaje del ultimo fallo, para decir POR QUE fallo y no solo que fallo */
+  motivoFallo?: string;
 }
 
 const BG = "#130C3D";

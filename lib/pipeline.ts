@@ -74,8 +74,14 @@ export async function createPiece(
           outputDir: path.relative(process.cwd(), outDir),
           coverPath: result.cover,
           slideCount: result.files.length,
+          // Si el render degrado (tipicamente: sin creditos de imagenes), queda
+          // escrito en la pieza. Antes moria en el journal y se publicaba igual.
+          renderWarning: result.avisoRender ?? "",
         },
       });
+      if (result.avisoRender) {
+        console.warn("[pipeline] " + result.avisoRender);
+      }
     } else {
       // Video con clip Veo3 de fondo si hay KIE_API_KEY (desactivable con
       // KIE_VIDEO=off); si falla o no hay key, video clásico de tarjetas.

@@ -69,6 +69,10 @@ model ContentPiece {
   updatedAt         DateTime        @updatedAt
   approvedAt        DateTime?
   publishedAt       DateTime?
+  /// Aviso si la pieza salio degradada (ej: sin las imagenes de IA por falta de
+  /// creditos). Vacio = salio bien. Se muestra en Telegram y en el panel para
+  /// que nadie apruebe a ciegas algo que se ve peor de lo normal.
+  renderWarning     String          @default("")
   /// Ventana de veto: hora a la que la pieza se publica sola si nadie la frena.
   /// Null = no tiene publicación automática (o alguien apretó "Esperar").
   autoPublishAt     DateTime?
