@@ -150,6 +150,11 @@ export async function publishInstagram(
       });
       const res = await graphPost(`${GRAPH}/${meta.igUserId}/media`, carousel);
       creationId = String(res.id);
+      // El contenedor del carrusel también se procesa, igual que cada lámina:
+      // publicarlo de inmediato devuelve "Media ID is not available" unas veces
+      // sí y otras no, según cuánto demore Instagram. El camino de video ya
+      // esperaba; el de carrusel no, y por eso fallaba de forma intermitente.
+      await waitForContainer(creationId, token, 60_000);
     }
 
     const publish = new URLSearchParams({ creation_id: creationId, access_token: token });
