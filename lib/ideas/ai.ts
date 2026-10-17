@@ -68,7 +68,7 @@ const IDEA_SCHEMA = {
     coverImagePrompt: {
       type: "string",
       description:
-        "Descripción EN INGLÉS de la imagen de portada: escena corporativa/profesional cinematográfica " +
+        "Descripción EN INGLÉS de la imagen de portada: escena concreta de una PYME, solo lo que se ve (la luz y el estilo se agregan solos) " +
         "relacionada al tema (sin texto, sin logos, sin marcas de agua)",
     },
     coverPhoto: {
@@ -133,8 +133,8 @@ export async function generateIdeaWithAI(
     seasonContext();
 
   const layoutGuide =
-    "\n\nDiseño de las slides (estética premium: fondo azul marino profundo, tipografía blanca gigante, acentos violeta, fotos corporativas oscuras):\n" +
-    "- 'split' (texto + foto) es el layout más usado. Dale un imagePrompt EN INGLÉS con una escena profesional concreta y oscura (ej: 'two professionals in a job interview across a table, modern dark office, moody cinematic light').\n" +
+    "\n\nDiseño de las slides (estética premium: fondo azul marino profundo, tipografía blanca gigante, acentos violeta):\n" +
+    "- 'split' (texto + foto) es el layout más usado. Dale un imagePrompt EN INGLÉS que describa QUÉ se ve — las personas, el lugar, lo que están haciendo — sin luz ni estilo fotográfico: eso se agrega solo y rota entre láminas. Lugares de PYME, no oficinas corporativas (ej: 'two people talking across the counter of a small hardware store').\n" +
     "- 'list' para enumeraciones (señales de alerta, checklist, pasos): 3-4 bullets cortos.\n" +
     "- 'statement' UNA vez por carrusel máximo: la frase de impacto que la gente comparte (penúltima slide idealmente). Sin foto.\n" +
     "- 'compare' solo cuando el contraste aporte (contratar por intuición vs con datos, CV vs evidencia).\n" +
