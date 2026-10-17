@@ -137,7 +137,7 @@ export async function generateIdeaWithAI(
     "- 'split' (texto + foto) es el layout más usado. Dale un imagePrompt EN INGLÉS que describa QUÉ se ve — las personas, el lugar, lo que están haciendo — sin luz ni estilo fotográfico: eso se agrega solo y rota entre láminas. Lugares de PYME, no oficinas corporativas (ej: 'two people talking across the counter of a small hardware store').\n" +
     "- 'list' para enumeraciones (señales de alerta, checklist, pasos): 3-4 bullets cortos.\n" +
     "- 'statement' UNA vez por carrusel máximo: la frase de impacto que la gente comparte (penúltima slide idealmente). Sin foto.\n" +
-    "- 'compare' solo cuando el contraste aporte (contratar por intuición vs con datos, CV vs evidencia).\n" +
+    "- 'compare' solo cuando la izquierda es de verdad lo incorrecto (la plantilla la marca con ✗ rojas y la derecha con ✓): contratar por intuición vs con datos, CV vs evidencia. Si comparas dos cosas distintas que no son mejor ni peor (dos cargos, dos empresas, dos estilos de trabajo), NO uses 'compare': usa 'list' o dos láminas 'split'. Nunca dejes un oficio o un tipo de empresa del lado de la ✗: el dueño de esa empresa puede ser tu cliente.\n" +
     "- Varía los layouts: un carrusel con puras slides iguales aburre.";
 
   const photoGuide = photos.length
