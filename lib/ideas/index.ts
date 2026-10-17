@@ -29,6 +29,8 @@ export async function getIdea(
   const recentTitles = recent
     .filter((r) => r.status !== "REJECTED")
     .map((r) => r.title);
+  // Cuántas piezas lleva este negocio: decide qué voz le toca (ver elegirRegistro).
+  const turno = await prisma.contentPiece.count({ where: { businessId: business.id } });
 
   if (customPrompt?.trim()) {
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -38,7 +40,7 @@ export async function getIdea(
       );
     }
     const { generateIdeaWithAI } = await import("./ai");
-    const idea = await generateIdeaWithAI(business, type, recentTitles, customPrompt);
+    const idea = await generateIdeaWithAI(business, type, recentTitles, customPrompt, undefined, turno);
     return { idea, source: "ai" };
   }
 
@@ -53,7 +55,7 @@ export async function getIdea(
     if (propia) {
       try {
         const { generateIdeaWithAI } = await import("./ai");
-        const idea = await generateIdeaWithAI(business, type, recentTitles, propia.texto);
+        const idea = await generateIdeaWithAI(business, type, recentTitles, propia.texto, undefined, turno);
         // Se marca recién ahora, con la IA ya resuelta: si fallaba, la idea seguía
         // en la cola y se reintentaba en vez de perderse.
         await prisma.ideaPropia.update({
@@ -77,7 +79,7 @@ export async function getIdea(
       // 2 de sus 5 pilares y las últimas 5 piezas fueron la misma idea escrita
       // de cinco formas distintas — todas rechazadas.
       const pilar = pickNextPillar(business, recent);
-      const idea = await generateIdeaWithAI(business, type, recentTitles, undefined, pilar);
+      const idea = await generateIdeaWithAI(business, type, recentTitles, undefined, pilar, turno);
       return { idea, source: "ai" };
     } catch (err) {
       console.error(

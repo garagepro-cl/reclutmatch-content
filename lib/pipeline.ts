@@ -35,6 +35,7 @@ export async function createPiece(
       type,
       status: "RENDERING",
       pillar: idea.pillar,
+      voz: idea.voz ?? "",
       customPrompt: customPrompt?.trim() ?? "",
       title: idea.title,
       hook: idea.hook,

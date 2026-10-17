@@ -1,6 +1,6 @@
 /**
  * Muestra en pantalla la idea que saldría ahora, SIN crear la pieza:
- * no escribe en la base, no renderiza, no avisa por Telegram y no publica.
+ * no escribe en la base, no avisa por Telegram y no publica.
  * Sirve para revisar el tono y comprobar la rotación de pilares antes de dejar
  * que el sistema genere solo.
  *
@@ -9,15 +9,27 @@
  *
  *   npm run probar-idea
  *   npm run probar-idea -- reclutmatch VIDEO
+ *   npm run probar-idea -- reclutmatch CAROUSEL --render
+ *
+ * Con --render además dibuja las láminas en una carpeta temporal, para ver la
+ * pieza completa con imágenes. Sigue sin tocar la base ni Telegram, pero SÍ gasta
+ * créditos de imágenes (hasta 4 por carrusel).
  */
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { prisma } from "../lib/db";
 import { pickNextPillar } from "../lib/ideas";
 import { generateIdeaWithAI } from "../lib/ideas/ai";
 import { parseTopics } from "../lib/brands";
+import { elegirRegistro, NOMBRES_VOZ } from "../lib/ideas/voz";
 
 async function main() {
-  const slug = process.argv[2];
-  const type = (process.argv[3] || "CAROUSEL").toUpperCase() as "CAROUSEL" | "VIDEO";
+  // Las banderas no deben confundirse con el slug o el tipo
+  const args = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+  const dibujar = process.argv.includes("--render");
+  const slug = args[0];
+  const type = (args[1] || "CAROUSEL").toUpperCase() as "CAROUSEL" | "VIDEO";
 
   const business = slug
     ? await prisma.business.findUniqueOrThrow({ where: { slug } })
@@ -31,6 +43,8 @@ async function main() {
   });
   const recentTitles = recent.filter((r) => r.status !== "REJECTED").map((r) => r.title);
   const pilar = pickNextPillar(business, recent);
+  const turno = await prisma.contentPiece.count({ where: { businessId: business.id } });
+  const registro = elegirRegistro(turno);
 
   const usados = new Set(recent.map((r) => r.pillar.trim().toLowerCase()).filter(Boolean));
   console.log(`Negocio: ${business.name} · Tipo: ${type}`);
@@ -40,7 +54,9 @@ async function main() {
   }
   console.log(`\nPilar que toca por rotación: ${pilar ?? "(sin pilares configurados)"}\n`);
 
-  const idea = await generateIdeaWithAI(business, type, recentTitles, undefined, pilar);
+  console.log(`Voz que toca: (${registro}) ${NOMBRES_VOZ[registro]}`);
+  console.log("");
+  const idea = await generateIdeaWithAI(business, type, recentTitles, undefined, pilar, turno);
 
   console.log("─".repeat(70));
   console.log(`PILAR   : ${idea.pillar}`);
@@ -60,6 +76,30 @@ async function main() {
   console.log(`CAPTION : ${idea.caption}`);
   console.log(`HASHTAGS: ${idea.hashtags.join(" ")}`);
   console.log("─".repeat(70));
+  if (dibujar && type === "CAROUSEL") {
+    const { renderCarouselPremium } = await import("../lib/render/carousel");
+    const outDir = path.join(os.tmpdir(), `rm-vista-previa-${Date.now()}`);
+    fs.mkdirSync(outDir, { recursive: true });
+    const r = await renderCarouselPremium(
+      business,
+      {
+        title: idea.title,
+        hook: idea.hook,
+        pillar: idea.pillar,
+        slides: idea.slides,
+        coverImagePrompt: idea.coverImagePrompt,
+        coverPhoto: idea.coverPhoto,
+      },
+      outDir,
+    );
+    console.log("");
+    console.log(`Láminas dibujadas (${r.files.length}) en: ${outDir}`);
+    if (r.avisoRender) console.log(`⚠️  ${r.avisoRender}`);
+  } else if (dibujar) {
+    console.log("");
+    console.log("--render solo dibuja carruseles; el video se arma con el pipeline completo.");
+  }
+
   console.log("\n(Nada de esto se guardó: es solo una vista previa.)");
 
   await prisma.$disconnect();

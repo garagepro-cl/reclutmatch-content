@@ -4,6 +4,7 @@ import type { Idea, IdeaSlide } from "./types";
 import { parseTopics } from "../brands";
 import { listPhotos } from "../photos";
 import { seasonContext } from "../season";
+import { vozDeMarca, elegirRegistro } from "./voz";
 
 const SLIDE_SCHEMA = {
   type: "object",
@@ -101,21 +102,31 @@ export async function generateIdeaWithAI(
   recentTitles: string[],
   customPrompt?: string,
   pilarForzado?: string,
+  turno = 0,
 ): Promise<Idea> {
   const client = new Anthropic();
   const model = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
   const topics = parseTopics(business);
   const photos = listPhotos(business.slug);
+  // Una de cada tres piezas contada como caso; el resto, el que explica (voz.ts).
+  const registro = elegirRegistro(turno);
+  // El modelo no sabe en qué año está: en septiembre de 2026 escribió «En 2025 tus
+  // datos de RRHH tienen dueño». Con la fecha explícita no lo inventa — y acá importa
+  // más que en otros lados, porque se publica sobre plazos de la Ley 21.719.
+  const hoy = new Intl.DateTimeFormat("es-CL", { timeZone: "America/Santiago", dateStyle: "full" }).format(new Date());
 
   const system =
+    `Hoy es ${hoy}. ` +
     `Eres estratega de contenido para redes sociales de "${business.name}" ` +
     `(${business.tagline}). Descripción del negocio: ${business.description}\n\n` +
     `El contenido se publica en LinkedIn (página de empresa) e Instagram. ` +
     `Audiencia principal: dueños de PYME, gerentes y encargados de selección en Chile (B2B); ` +
     `secundaria: candidatos y profesionales interesados en su desarrollo. ` +
-    `Escribes en español de Chile, tono profesional-cercano y con autoridad técnica, sin jerga ` +
-    `académica ni promesas infladas. Puedes citar conceptos reales (Big Five, validez predictiva, ` +
-    `entrevista estructurada, costo de rotación) siempre explicados simple.\n` +
+    // Antes: «tono profesional-cercano y con autoridad técnica», una descripción
+    // abstracta que la IA rellena con voz de consultora. Ahora describe quién habla.
+    vozDeMarca(registro) +
+    `Puedes citar conceptos reales (Big Five, validez predictiva, entrevista estructurada, ` +
+    `costo de rotación) siempre explicados simple.\n` +
     `Pilares de contenido disponibles: ${topics.join(", ")}.\n` +
     `El contenido debe ser útil de verdad, específico y creíble — nada de relleno genérico de RRHH. ` +
     `Regla de oro: cada pieza deja al lector sabiendo algo accionable sobre contratar mejor.\n\n` +
@@ -158,7 +169,9 @@ export async function generateIdeaWithAI(
 
   const response = await client.messages.create({
     model,
-    max_tokens: 4000,
+    // 8000 y no 4000: la voz que cuenta casos escribe más largo y con 4000 se cortaba
+    // a la mitad del JSON (pasó en Garage Pro el 17-oct). Se paga lo usado, no el tope.
+    max_tokens: 8000,
     system,
     output_config: {
       format: { type: "json_schema", schema: IDEA_SCHEMA },
@@ -168,6 +181,11 @@ export async function generateIdeaWithAI(
 
   if (response.stop_reason === "refusal") {
     throw new Error("La IA rechazó la solicitud (refusal)");
+  }
+  // Sin esto, un corte por largo llega como «Unterminated string in JSON», que no
+  // dice nada, y el que llama cae al banco de ideas. Mejor que diga por qué.
+  if (response.stop_reason === "max_tokens") {
+    throw new Error(`La respuesta de la IA se cortó por largo (registro ${registro}): subir max_tokens`);
   }
 
   const textBlock = response.content.find((b) => b.type === "text");
@@ -193,6 +211,7 @@ export async function generateIdeaWithAI(
     // El pilar guardado es el que decidió la rotación, no el que declare la IA:
     // escribiéndolo a su manera rompía el conteo y un mismo pilar se contaba dos veces.
     pillar: (!customPrompt?.trim() && pilarForzado) || parsed.pillar || "",
+    voz: registro,
     type,
     title: parsed.title,
     hook: parsed.hook ?? "",

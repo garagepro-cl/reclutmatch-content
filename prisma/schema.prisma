@@ -52,6 +52,8 @@ model ContentPiece {
   type              String // CAROUSEL | VIDEO
   status            String          @default("DRAFT") // DRAFT | RENDERING | PENDING | APPROVED | PUBLISHED | REJECTED | FAILED
   pillar            String          @default("")
+  /// Registro de voz con que se escribió (a/b/c). Para comparar después cuál rinde mejor.
+  voz               String          @default("")
   customPrompt      String          @default("")
   title             String
   hook              String          @default("")

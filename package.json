@@ -14,7 +14,9 @@
     "yt:auth": "tsx scripts/yt-auth.ts",
     "probar-idea": "tsx scripts/probar-idea.ts",
     "probar-linkedin": "tsx scripts/probar-linkedin.ts",
-    "reintentar-ig": "tsx scripts/reintentar-instagram.ts"
+    "reintentar-ig": "tsx scripts/reintentar-instagram.ts",
+    "test-voz": "tsx scripts/test-voz.ts",
+    "test-arte": "tsx scripts/test-arte.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",

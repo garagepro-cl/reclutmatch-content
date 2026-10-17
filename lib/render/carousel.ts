@@ -56,14 +56,85 @@ export function avisoDeImagenes(
 /** Máximo de imágenes generadas con IA por carrusel (control de costo) */
 const MAX_AI_IMAGES = 4;
 
-/** Envuelve el prompt de la IA con el estilo visual de la marca */
-function styleWrap(prompt: string, business: Business): string {
+/**
+ * Tratamientos visuales. Antes había UNO solo —«dark premium corporate photography,
+ * modern office environment... professional people in business settings»— para
+ * todas las imágenes. Dos problemas: todas las piezas se veían iguales, y mostraban
+ * oficinas corporativas de vidrio cuando el cliente de ReclutMatch es el dueño de
+ * una PYME. Mismo arreglo que Garage Pro (17-oct-2026).
+ *
+ * Rotan por lámina dentro de un carrusel y arrancan en un punto distinto según el
+ * título, así que dos piezas seguidas no comparten la secuencia.
+ */
+const TRATAMIENTOS: { nombre: string; arte: string }[] = [
+  {
+    nombre: "documental",
+    arte:
+      "Candid documentary photography, natural daylight from a window, unstaged, " +
+      "people in the middle of real work, 35mm reportage feel, mild grain",
+  },
+  {
+    nombre: "detalle",
+    arte:
+      "Close-up detail on a work desk: hands, a pen and printed sheets seen at an angle " +
+      "so nothing is readable, soft side light, shallow background",
+  },
+  {
+    nombre: "conversacion",
+    arte:
+      "Two people talking across a table, over-the-shoulder framing, warm natural light, " +
+      "attentive and genuine expressions, quiet honest mood",
+  },
+  {
+    nombre: "equipo",
+    arte:
+      "A small team working together, mixed ages, casual-professional clothing, wide shot, " +
+      "cool daylight, unpretentious and real",
+  },
+  {
+    nombre: "cinematico",
+    arte:
+      "Dark premium editorial photography, deep navy and violet ambient tones, " +
+      "dramatic cinematic lighting, shallow depth of field",
+  },
+];
+
+/**
+ * Dónde ocurre la escena. Antes era siempre «modern office environment»: el gerente
+ * de una multinacional, no el dueño de la ferretería que contrata a ReclutMatch.
+ */
+const ESCENARIOS_PYME = [
+  "a small family-run hardware store in Chile",
+  "the office corner of a mid-size distribution warehouse",
+  "a neighbourhood restaurant before opening hours",
+  "a small accounting firm with a few desks",
+  "the shop floor of a retail store",
+  "the site office of a small construction company",
+];
+
+/** Suma de caracteres del título: desplaza la secuencia para que cada pieza empiece distinto. */
+export function semilla(texto: string): number {
+  let n = 0;
+  for (let i = 0; i < texto.length; i++) n = (n + texto.charCodeAt(i)) % 997;
+  return n;
+}
+
+/**
+ * Envuelve el prompt con la dirección de arte y el escenario que le tocan a esta
+ * lámina. `indice` es la posición dentro del carrusel (la portada es 0).
+ */
+export function styleWrap(
+  prompt: string,
+  business: Business,
+  indice: number,
+  desplazamiento: number,
+): string {
   const context = business.description || business.tagline || business.name;
+  const t = TRATAMIENTOS[(indice + desplazamiento) % TRATAMIENTOS.length];
+  const lugar = ESCENARIOS_PYME[(indice + desplazamiento) % ESCENARIOS_PYME.length];
   return (
-    `${prompt}. Context: ${context}. ` +
-    "Dark premium corporate photography, modern office environment with deep navy and violet ambient tones, " +
-    "dramatic cinematic lighting, shallow depth of field, professional people in business settings, " +
-    "photorealistic, high-end editorial style. " +
+    `${prompt}. Context: ${context}. Setting: ${lugar}. ` +
+    `${t.arte}, photorealistic. ` +
     "No text, no words, no logos, no watermarks, no readable documents or screens."
   );
 }
@@ -82,6 +153,10 @@ async function resolveImages(
   let intentosIA = 0;
   let fallosIA = 0;
   let motivoFallo: string | undefined;
+  // Cada lámina que pide imagen avanza un tratamiento y un escenario; el
+  // desplazamiento hace que dos piezas seguidas no arranquen igual.
+  let indiceImagen = 0;
+  const desplazamiento = semilla(data.title ?? "");
 
   const resolveOne = async (
     photo?: string,
@@ -95,7 +170,7 @@ async function resolveImages(
       aiBudget--;
       intentosIA++;
       try {
-        const bytes = await generateImage(styleWrap(prompt, business), {
+        const bytes = await generateImage(styleWrap(prompt, business, indiceImagen++, desplazamiento), {
           aspectRatio: "4:5",
           resolution: "1K",
         });

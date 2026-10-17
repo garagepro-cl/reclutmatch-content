@@ -23,6 +23,8 @@ export interface IdeaSlide {
 export interface Idea {
   /** Pilar de contenido al que pertenece */
   pillar: string;
+  /** Registro de voz con que se escribió (a/b/c, ver lib/ideas/voz.ts). Vacío si salió del banco. */
+  voz?: string;
   /** CAROUSEL, VIDEO o ANY (sirve para ambos) */
   type: "CAROUSEL" | "VIDEO" | "ANY";
   /** Título interno / gancho principal de la portada */
