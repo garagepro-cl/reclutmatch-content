@@ -5,7 +5,7 @@
  *   npm run test-audiencia
  */
 import type { Business } from "@prisma/client";
-import { audienciaDe, marcarPilar, negocioParaAudiencia, lectorDe } from "../lib/ideas/audiencia";
+import { audienciaDe, marcarPilar, negocioParaAudiencia, lectorDe, whatsappCandidatos, cerrarCaption } from "../lib/ideas/audiencia";
 import { vozDeMarca } from "../lib/ideas/voz";
 import { styleWrap } from "../lib/render/carousel";
 
@@ -58,6 +58,28 @@ chk(!imgs.some((s) => /hardware store|warehouse|restaurant|construction|accounti
   "imágenes para candidatos nunca usan escenas de PYME");
 chk(imgs.every((s) => s.includes("looking for a job")), "imágenes para candidatos: contexto de quien postula");
 chk(styleWrap("x", negocio, 0, 0).includes("Ayuda a PYMEs"), "imágenes para empresas sin cambios");
+
+
+// 6. WhatsApp para candidatos (28-oct-2026)
+const conWsp = (extra: Record<string, unknown>) =>
+  ({ ...negocio, brandJson: JSON.stringify({ ctaButton: "Escríbenos en reclutmatch.cl", ...extra }) } as unknown as Business);
+const w = whatsappCandidatos(conWsp({ whatsappCandidatos: "+56 9 1234 5678", contactoCandidatos: "Andrea" }));
+chk(w?.numero === "+56 9 1234 5678", `número chileno formateado: ${w?.numero}`);
+chk(!!w && w.enlace.startsWith("https://wa.me/56912345678?text="), "link wa.me con solo dígitos");
+chk(!!w && decodeURIComponent(w.enlace).includes("Hola Andrea, vi la publicación de ReclutMatch"), "mensaje prellenado para Andrea");
+chk(whatsappCandidatos(conWsp({ whatsappCandidatos: "9 1234" })) === null, "número incompleto -> no se publica");
+chk(whatsappCandidatos(negocio) === null, "sin número -> nada cambia");
+const vista = negocioParaAudiencia(conWsp({ whatsappCandidatos: "56912345678", contactoCandidatos: "Andrea" }), "candidatos");
+chk(JSON.parse(vista.brandJson).ctaButton === "Escríbele a Andrea", `botón: "${JSON.parse(vista.brandJson).ctaButton}"`);
+chk(vista.phone === "WhatsApp +56 9 1234 5678" && vista.website === "", "el número reemplaza a la web en el pie de la lámina");
+chk(negocioParaAudiencia(conWsp({ whatsappCandidatos: "56912345678" }), "empresas").phone !== "WhatsApp +56 9 1234 5678",
+  "las piezas para empresas no muestran el WhatsApp de Andrea");
+const capCand = cerrarCaption(conWsp({ whatsappCandidatos: "56912345678", contactoCandidatos: "Andrea" }), "Candidatos: x", "Texto.");
+chk(capCand.includes("💬 Escríbele a Andrea por WhatsApp: +56 9 1234 5678") && capCand.includes("https://wa.me/56912345678"),
+  "caption de candidatos cierra con número y link");
+chk(cerrarCaption(conWsp({ whatsappCandidatos: "56912345678" }), "fit empresarial", "Texto.") === "Texto.",
+  "caption de empresas NO lleva el WhatsApp de Andrea");
+chk(cerrarCaption(negocio, "Candidatos: x", "Texto.") === "Texto.", "sin número cargado, el caption no cambia");
 
 console.log(fallas === 0 ? "\nTodo en orden." : `\n${fallas} fallas`);
 process.exit(fallas === 0 ? 0 : 1);

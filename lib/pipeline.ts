@@ -5,7 +5,7 @@ import { getIdea } from "./ideas";
 import { renderCarousel, renderCarouselPremium } from "./render/carousel";
 import { renderVideo, renderVideoWithAiBackground } from "./render/video";
 import { outputDirFor } from "./brands";
-import { audienciaDe, negocioParaAudiencia } from "./ideas/audiencia";
+import { audienciaDe, cerrarCaption, negocioParaAudiencia } from "./ideas/audiencia";
 
 export type PieceWithBusiness = ContentPiece & { business: Business };
 
@@ -45,7 +45,8 @@ export async function createPiece(
       title: idea.title,
       hook: idea.hook,
       slidesJson: JSON.stringify(idea.slides),
-      caption: idea.caption,
+      // Para candidatos agrega el WhatsApp de contacto (número y link los pone el código).
+      caption: cerrarCaption(business, idea.pillar, idea.caption),
       hashtags: idea.hashtags.join(" "),
       source,
     },

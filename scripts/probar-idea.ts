@@ -23,7 +23,7 @@ import { pickNextPillar } from "../lib/ideas";
 import { generateIdeaWithAI } from "../lib/ideas/ai";
 import { parseTopics } from "../lib/brands";
 import { elegirRegistro, NOMBRES_VOZ } from "../lib/ideas/voz";
-import { audienciaDe, negocioParaAudiencia } from "../lib/ideas/audiencia";
+import { audienciaDe, cerrarCaption, negocioParaAudiencia } from "../lib/ideas/audiencia";
 
 async function main() {
   // Las banderas no deben confundirse con el slug o el tipo
@@ -75,7 +75,7 @@ async function main() {
     else if (s.imagePrompt) console.log(`    [imagen IA: ${s.imagePrompt.slice(0, 90)}]`);
   });
   console.log("\n" + "─".repeat(70));
-  console.log(`CAPTION : ${idea.caption}`);
+  console.log(`CAPTION : ${cerrarCaption(business, idea.pillar, idea.caption)}`);
   console.log(`HASHTAGS: ${idea.hashtags.join(" ")}`);
   console.log("─".repeat(70));
   if (dibujar && type === "CAROUSEL") {
