@@ -16,7 +16,8 @@
     "probar-linkedin": "tsx scripts/probar-linkedin.ts",
     "reintentar-ig": "tsx scripts/reintentar-instagram.ts",
     "test-voz": "tsx scripts/test-voz.ts",
-    "test-arte": "tsx scripts/test-arte.ts"
+    "test-arte": "tsx scripts/test-arte.ts",
+    "test-audiencia": "tsx scripts/test-audiencia.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",

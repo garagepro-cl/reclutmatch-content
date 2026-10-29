@@ -5,6 +5,7 @@ import { promisify } from "node:util";
 import ffmpegPath from "ffmpeg-static";
 import type { Business } from "@prisma/client";
 import { parseBrand } from "../brands";
+import { audienciaDe, type Audiencia } from "../ideas/audiencia";
 import { generateImage } from "../ai/gpt-image";
 import {
   buildCarouselSlides,
@@ -112,6 +113,19 @@ const ESCENARIOS_PYME = [
   "the site office of a small construction company",
 ];
 
+/**
+ * Escenas para las piezas dirigidas a quien busca trabajo (desde el 28-oct-2026).
+ * La ferretería o la bodega no le dicen nada a alguien que está esperando que lo llamen.
+ */
+const ESCENARIOS_CANDIDATOS = [
+  "a small apartment in Santiago, someone at the kitchen table with notes before a job interview",
+  "the reception area of an office, a candidate waiting to be called in",
+  "a home desk with a laptop during a video-call job interview",
+  "the street outside an office building right after a job interview",
+  "a metro seat in Santiago, someone checking their phone for a message that has not arrived",
+  "a small meeting room during a job interview, seen from the candidate's side of the table",
+];
+
 /** Suma de caracteres del título: desplaza la secuencia para que cada pieza empiece distinto. */
 export function semilla(texto: string): number {
   let n = 0;
@@ -128,10 +142,17 @@ export function styleWrap(
   business: Business,
   indice: number,
   desplazamiento: number,
+  audiencia: Audiencia = "empresas",
 ): string {
-  const context = business.description || business.tagline || business.name;
+  // Para candidatos, la descripción del negocio (B2B, PYMEs, evaluación) empujaría la
+  // imagen a una oficina de empresa: el contexto tiene que ser el de quien postula.
+  const context =
+    audiencia === "candidatos"
+      ? "a person in Chile looking for a job and preparing for interviews"
+      : business.description || business.tagline || business.name;
   const t = TRATAMIENTOS[(indice + desplazamiento) % TRATAMIENTOS.length];
-  const lugar = ESCENARIOS_PYME[(indice + desplazamiento) % ESCENARIOS_PYME.length];
+  const escenarios = audiencia === "candidatos" ? ESCENARIOS_CANDIDATOS : ESCENARIOS_PYME;
+  const lugar = escenarios[(indice + desplazamiento) % escenarios.length];
   return (
     `${prompt}. Context: ${context}. Setting: ${lugar}. ` +
     `${t.arte}, photorealistic. ` +
@@ -157,6 +178,7 @@ async function resolveImages(
   // desplazamiento hace que dos piezas seguidas no arranquen igual.
   let indiceImagen = 0;
   const desplazamiento = semilla(data.title ?? "");
+  const audiencia = audienciaDe(data.pillar);
 
   const resolveOne = async (
     photo?: string,
@@ -170,7 +192,7 @@ async function resolveImages(
       aiBudget--;
       intentosIA++;
       try {
-        const bytes = await generateImage(styleWrap(prompt, business, indiceImagen++, desplazamiento), {
+        const bytes = await generateImage(styleWrap(prompt, business, indiceImagen++, desplazamiento, audiencia), {
           aspectRatio: "4:5",
           resolution: "1K",
         });

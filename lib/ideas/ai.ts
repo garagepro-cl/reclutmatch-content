@@ -5,6 +5,7 @@ import { parseTopics } from "../brands";
 import { listPhotos } from "../photos";
 import { seasonContext } from "../season";
 import { vozDeMarca, elegirRegistro } from "./voz";
+import { audienciaDe, lectorDe, marcarPilar, negocioParaAudiencia } from "./audiencia";
 
 const SLIDE_SCHEMA = {
   type: "object",
@@ -80,7 +81,7 @@ const IDEA_SCHEMA = {
       type: "string",
       description:
         "Caption que funcione en LinkedIn e Instagram: parte con un gancho fuerte en la primera " +
-        "línea, desarrolla en 2-4 líneas cortas, cierra con CTA. Emojis con moderación (tono B2B)",
+        "línea, desarrolla en 2-4 líneas cortas, cierra con CTA. Emojis con moderación",
     },
     hashtags: {
       type: "array",
@@ -110,6 +111,9 @@ export async function generateIdeaWithAI(
   const photos = listPhotos(business.slug);
   // Una de cada tres piezas contada como caso; el resto, el que explica (voz.ts).
   const registro = elegirRegistro(turno);
+  // Empresas o personas que buscan trabajo: lo dice el pilar o la idea anotada
+  // (los que empiezan con "Candidatos:"). Cambia lector, voz, imágenes y cierre.
+  const audiencia = audienciaDe(pilarForzado, customPrompt);
   // El modelo no sabe en qué año está: en septiembre de 2026 escribió «En 2025 tus
   // datos de RRHH tienen dueño». Con la fecha explícita no lo inventa — y acá importa
   // más que en otros lados, porque se publica sobre plazos de la Ley 21.719.
@@ -120,21 +124,27 @@ export async function generateIdeaWithAI(
     `Eres estratega de contenido para redes sociales de "${business.name}" ` +
     `(${business.tagline}). Descripción del negocio: ${business.description}\n\n` +
     `El contenido se publica en LinkedIn (página de empresa) e Instagram. ` +
-    `Audiencia principal: dueños de PYME, gerentes y encargados de selección en Chile (B2B); ` +
-    `secundaria: candidatos y profesionales interesados en su desarrollo. ` +
+    lectorDe(audiencia) +
     // Antes: «tono profesional-cercano y con autoridad técnica», una descripción
     // abstracta que la IA rellena con voz de consultora. Ahora describe quién habla.
-    vozDeMarca(registro) +
+    vozDeMarca(registro, audiencia) +
     `Puedes citar conceptos reales (Big Five, validez predictiva, entrevista estructurada, ` +
     `costo de rotación) siempre explicados simple.\n` +
     `Pilares de contenido disponibles: ${topics.join(", ")}.\n` +
     `El contenido debe ser útil de verdad, específico y creíble — nada de relleno genérico de RRHH. ` +
-    `Regla de oro: cada pieza deja al lector sabiendo algo accionable sobre contratar mejor.\n\n` +
+    `\n` +
     seasonContext();
+
+  // Las escenas cambian con el público: el dueño de una PYME se reconoce en su negocio;
+  // quien busca trabajo, en la sala de espera o frente al notebook antes de la entrevista.
+  const lugaresImagen =
+    audiencia === "candidatos"
+      ? "Escenas de quien busca trabajo, no de empresas (ej: 'a person rehearsing answers at a kitchen table before a job interview')."
+      : "Lugares de PYME, no oficinas corporativas (ej: 'two people talking across the counter of a small hardware store').";
 
   const layoutGuide =
     "\n\nDiseño de las slides (estética premium: fondo azul marino profundo, tipografía blanca gigante, acentos violeta):\n" +
-    "- 'split' (texto + foto) es el layout más usado. Dale un imagePrompt EN INGLÉS que describa QUÉ se ve — las personas, el lugar, lo que están haciendo — sin luz ni estilo fotográfico: eso se agrega solo y rota entre láminas. Lugares de PYME, no oficinas corporativas (ej: 'two people talking across the counter of a small hardware store').\n" +
+    "- 'split' (texto + foto) es el layout más usado. Dale un imagePrompt EN INGLÉS que describa QUÉ se ve — las personas, el lugar, lo que están haciendo — sin luz ni estilo fotográfico: eso se agrega solo y rota entre láminas. " + lugaresImagen + "\n" +
     "- 'list' para enumeraciones (señales de alerta, checklist, pasos): 3-4 bullets cortos.\n" +
     "- 'statement' UNA vez por carrusel máximo: la frase de impacto que la gente comparte (penúltima slide idealmente). Sin foto.\n" +
     "- 'compare' solo cuando la izquierda es de verdad lo incorrecto (la plantilla la marca con ✗ rojas y la derecha con ✓): contratar por intuición vs con datos, CV vs evidencia. Si comparas dos cosas distintas que no son mejor ni peor (dos cargos, dos empresas, dos estilos de trabajo), NO uses 'compare': usa 'list' o dos láminas 'split'. Nunca dejes un oficio o un tipo de empresa del lado de la ✗: el dueño de esa empresa puede ser tu cliente.\n" +
@@ -149,7 +159,7 @@ export async function generateIdeaWithAI(
     type === "CAROUSEL"
       ? "Genera UNA idea de carrusel de Instagram (5-6 slides de contenido; la portada y el cierre CTA se agregan aparte, NO los incluyas como slides). La primera impresión la da el título: debe generar curiosidad o urgencia. Cada slide aporta un dato concreto."
       : "Genera UNA idea de video corto vertical tipo Reel (5 slides de texto animado). La primera slide es el gancho (pregunta o dato sorprendente), las siguientes desarrollan.";
-  const cta = ` El cierre con llamado a la acción ("${business.ctaText}") se agrega automáticamente — no lo repitas en las slides.`;
+  const cta = ` El cierre con llamado a la acción ("${negocioParaAudiencia(business, audiencia).ctaText}") se agrega automáticamente — no lo repitas en las slides.`;
 
   // El pilar viene decidido desde afuera (rotación en lib/ideas/index.ts):
   // dejando elegir a la IA, siempre volvía a los mismos dos de los cinco.
@@ -210,7 +220,7 @@ export async function generateIdeaWithAI(
   return {
     // El pilar guardado es el que decidió la rotación, no el que declare la IA:
     // escribiéndolo a su manera rompía el conteo y un mismo pilar se contaba dos veces.
-    pillar: (!customPrompt?.trim() && pilarForzado) || parsed.pillar || "",
+    pillar: marcarPilar((!customPrompt?.trim() && pilarForzado) || parsed.pillar || "", audiencia),
     voz: registro,
     type,
     title: parsed.title,

@@ -136,6 +136,7 @@ function targetSummary(targets: { platform: string; status: string; permalink: s
 const COMANDOS =
   "Comandos:\n" +
   "/idea <texto> — anota una idea para la próxima pieza (varias líneas = varias ideas)\n" +
+  "/idea candidatos: <texto> — la idea le habla a quien busca trabajo, no a empresas\n" +
   "/ideas — muestra la cola de ideas anotadas\n" +
   "/generar [negocio] — crea una pieza ahora\n" +
   "/id — muestra el id de este chat";
@@ -174,7 +175,8 @@ function wire(b: Bot): void {
     if (!entrada) {
       await ctx.reply(
         "Escribe la idea después del comando.\n\n" +
-        "Ejemplo: `/idea el costo real de una mala contratación en una PYME`\n\n" +
+        "Ejemplo: `/idea el costo real de una mala contratación en una PYME`\n" +
+        "Para quien busca trabajo: `/idea candidatos: llegaste a la última etapa y no quedaste`\n\n" +
         "Puedes mandar varias de una vez, una por línea. Con /ideas ves la cola.",
         { parse_mode: "Markdown" },
       );

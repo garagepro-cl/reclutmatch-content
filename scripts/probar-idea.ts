@@ -23,6 +23,7 @@ import { pickNextPillar } from "../lib/ideas";
 import { generateIdeaWithAI } from "../lib/ideas/ai";
 import { parseTopics } from "../lib/brands";
 import { elegirRegistro, NOMBRES_VOZ } from "../lib/ideas/voz";
+import { audienciaDe, negocioParaAudiencia } from "../lib/ideas/audiencia";
 
 async function main() {
   // Las banderas no deben confundirse con el slug o el tipo
@@ -55,6 +56,7 @@ async function main() {
   console.log(`\nPilar que toca por rotación: ${pilar ?? "(sin pilares configurados)"}\n`);
 
   console.log(`Voz que toca: (${registro}) ${NOMBRES_VOZ[registro]}`);
+  console.log(`Le habla a: ${audienciaDe(pilar) === "candidatos" ? "personas que buscan trabajo" : "empresas"}`);
   console.log("");
   const idea = await generateIdeaWithAI(business, type, recentTitles, undefined, pilar, turno);
 
@@ -81,7 +83,7 @@ async function main() {
     const outDir = path.join(os.tmpdir(), `rm-vista-previa-${Date.now()}`);
     fs.mkdirSync(outDir, { recursive: true });
     const r = await renderCarouselPremium(
-      business,
+      negocioParaAudiencia(business, audienciaDe(idea.pillar)),
       {
         title: idea.title,
         hook: idea.hook,

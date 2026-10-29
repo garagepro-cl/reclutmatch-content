@@ -14,6 +14,8 @@
  * de una corporación.
  */
 
+import type { Audiencia } from "./audiencia";
+
 export type Registro = "a" | "b" | "c";
 
 /** Vale para los tres registros: lo que mata a cualquier voz. */
@@ -56,6 +58,38 @@ const REGISTROS: Record<Registro, string> = {
     "situación típica en presente (\"pasa mucho: una distribuidora asciende a...\").\n",
 };
 
+/**
+ * Para quien BUSCA TRABAJO (desde el 28-oct-2026). Lo que hace creíble a ReclutMatch
+ * acá es que está del otro lado de la mesa: evalúa candidatos para empresas, así que
+ * sabe qué se mira de verdad en una entrevista. Eso se demuestra, no se declara.
+ */
+const CANDIDATOS: Record<Registro, string> = {
+  a:
+    "Hablas como alguien que ha estado del otro lado de cientos de entrevistas — el que " +
+    "evalúa — y le cuenta al candidato lo que de verdad se mira y lo que nadie le explica. " +
+    "Tuteas. Concreto y práctico: qué decir, qué preparar, qué evitar, por qué. Con empatía: " +
+    "buscar trabajo cansa y un rechazo duele; nunca culpes al candidato ni le hables desde arriba.\n",
+  b:
+    "Hablas como quien evalúa candidatos y tiene opinión sobre los malos consejos de entrevista " +
+    "que circulan (las respuestas de memoria, el \"mi mayor defecto es ser perfeccionista\", " +
+    "fingir lo que no eres). Tomas partido y explicas por qué no funcionan, sin burlarte de " +
+    "quien los siguió.\n",
+  c:
+    "Escribes desde la situación que vive el candidato, no desde la teoría: saliste de la " +
+    "entrevista convencido de que te fue bien y nadie te llamó; llegaste a la última etapa y no " +
+    "quedaste; llevas semanas postulando sin respuesta. Describes lo que pasó del otro lado de " +
+    "la mesa y qué lo explica, y la enseñanza sale sola. Nunca inventes un caso real: cuenta la " +
+    "situación típica en presente (\"sales de la entrevista y...\").\n",
+};
+
+/** Reglas que valen para cualquier pieza dirigida a candidatos, sea cual sea el registro. */
+const LIMITES_CANDIDATOS =
+  "Límites: nunca prometas que va a conseguir el trabajo. Nunca enseñes a fingir personalidad " +
+  "ni a \"ganarle\" a un test psicométrico: ReclutMatch evalúa candidatos para empresas, y " +
+  "enseñar a engañar una evaluación destruiría lo que les vende. Lo que enseñas es a " +
+  "prepararse, a entender qué se evalúa y a mostrarse como es, pero bien. No inventes precio, " +
+  "duración ni formato de la asesoría: si la mencionas, en general (\"te ayudamos a prepararla\").\n";
+
 export const NOMBRES_VOZ: Record<Registro, string> = {
   a: "el que te explica",
   b: "con opinión",
@@ -73,6 +107,8 @@ export function elegirRegistro(turno: number): Registro {
   return turno % 3 === 2 ? "c" : "a";
 }
 
-export function vozDeMarca(registro: Registro): string {
-  return COMUN + REGISTROS[registro];
+export function vozDeMarca(registro: Registro, audiencia: Audiencia = "empresas"): string {
+  return audiencia === "candidatos"
+    ? COMUN + CANDIDATOS[registro] + LIMITES_CANDIDATOS
+    : COMUN + REGISTROS[registro];
 }

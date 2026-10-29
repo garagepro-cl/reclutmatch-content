@@ -5,6 +5,7 @@ import { getIdea } from "./ideas";
 import { renderCarousel, renderCarouselPremium } from "./render/carousel";
 import { renderVideo, renderVideoWithAiBackground } from "./render/video";
 import { outputDirFor } from "./brands";
+import { audienciaDe, negocioParaAudiencia } from "./ideas/audiencia";
 
 export type PieceWithBusiness = ContentPiece & { business: Business };
 
@@ -28,6 +29,10 @@ export async function createPiece(
   }
 
   const { idea, source } = await getIdea(business, type, customPrompt);
+  // Las piezas para quien busca trabajo cierran distinto ("Prepara tu próxima
+  // entrevista", no "Evalúa antes de contratar"). Solo el render ve este negocio
+  // ajustado; la base y Telegram siguen con el negocio tal cual.
+  const negocioRender = negocioParaAudiencia(business, audienciaDe(idea.pillar));
 
   const piece = await prisma.contentPiece.create({
     data: {
@@ -63,10 +68,10 @@ export async function createPiece(
       // cae al diseño clásico para no romper la generación programada.
       let result;
       try {
-        result = await renderCarouselPremium(business, renderData, outDir);
+        result = await renderCarouselPremium(negocioRender, renderData, outDir);
       } catch (err) {
         console.error("[pipeline] Falló el render premium, usando diseño clásico:", err);
-        result = await renderCarousel(business, renderData, outDir);
+        result = await renderCarousel(negocioRender, renderData, outDir);
       }
       updated = await prisma.contentPiece.update({
         where: { id: piece.id },
@@ -90,13 +95,13 @@ export async function createPiece(
       const aiVideo = process.env.KIE_API_KEY && process.env.KIE_VIDEO !== "off";
       if (aiVideo) {
         try {
-          result = await renderVideoWithAiBackground(business, renderData, outDir);
+          result = await renderVideoWithAiBackground(negocioRender, renderData, outDir);
         } catch (err) {
           console.error("[pipeline] Falló el video con IA, usando video clásico:", err);
-          result = await renderVideo(business, renderData, outDir);
+          result = await renderVideo(negocioRender, renderData, outDir);
         }
       } else {
-        result = await renderVideo(business, renderData, outDir);
+        result = await renderVideo(negocioRender, renderData, outDir);
       }
       updated = await prisma.contentPiece.update({
         where: { id: piece.id },
