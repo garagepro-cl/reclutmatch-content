@@ -117,3 +117,34 @@ export function cerrarCaption(business: Business, pilar: string, caption: string
   const quien = w.contacto ? `Escríbele a ${w.contacto}` : "Escríbenos";
   return `${caption.trimEnd()}\n\n💬 ${quien} por WhatsApp: ${w.numero}\n${w.enlace}`;
 }
+
+/**
+ * Qué ofrece ReclutMatch a quien busca trabajo, para que la IA hable del servicio
+ * siempre de la misma forma y sin inventar.
+ *
+ * Rodrigo (28-oct-2026): «harto contenido del roleplay que te decía Andrea para
+ * preparar entrevistas». El roleplay es una entrevista simulada: alguien que evalúa
+ * candidatos hace de entrevistador y la persona ensaya antes de la real. El detalle
+ * de cómo lo hace Andrea (duración, modalidad, precio) no llegó todavía, así que el
+ * texto por defecto no lo afirma. Se reemplaza sin desplegar con `servicioCandidatos`
+ * dentro del brandJson del negocio.
+ */
+export function servicioCandidatos(business: Business): string {
+  let brand: Record<string, unknown> = {};
+  try {
+    brand = JSON.parse(business.brandJson || "{}");
+  } catch {
+    /* brandJson inválido: se usa el texto por defecto */
+  }
+  const propio = typeof brand.servicioCandidatos === "string" ? brand.servicioCandidatos.trim() : "";
+  const servicio =
+    propio ||
+    "La preparación que ofrece ReclutMatch es práctica: un roleplay, es decir, una entrevista " +
+      "simulada en que alguien que evalúa candidatos de verdad hace de entrevistador, para que " +
+      "ensayes antes de la entrevista real.";
+  return (
+    `Lo que ofrece ${business.name} a quien busca trabajo: ${servicio} ` +
+    "Cuando la pieza lo pida, invita a hacer ese roleplay. No inventes duración, precio, " +
+    "modalidad (presencial u online) ni ningún detalle que no esté en esta descripción.\n"
+  );
+}

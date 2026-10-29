@@ -10,10 +10,14 @@
  *   npm run probar-idea
  *   npm run probar-idea -- reclutmatch VIDEO
  *   npm run probar-idea -- reclutmatch CAROUSEL --render
+ *   npm run probar-idea -- reclutmatch CAROUSEL "--idea=candidatos: roleplay de la pregunta de renta"
  *
  * Con --render además dibuja las láminas en una carpeta temporal, para ver la
  * pieza completa con imágenes. Sigue sin tocar la base ni Telegram, pero SÍ gasta
  * créditos de imágenes (hasta 4 por carrusel).
+ *
+ * Con --idea=... prueba una idea concreta en vez de la que toca por rotación: sirve
+ * para ver cómo saldría una idea antes de anotarla con /idea. No toca la cola.
  */
 import fs from "node:fs";
 import os from "node:os";
@@ -29,6 +33,7 @@ async function main() {
   // Las banderas no deben confundirse con el slug o el tipo
   const args = process.argv.slice(2).filter((a) => !a.startsWith("--"));
   const dibujar = process.argv.includes("--render");
+  const ideaPropia = process.argv.find((a) => a.startsWith("--idea="))?.slice("--idea=".length).trim() || undefined;
   const slug = args[0];
   const type = (args[1] || "CAROUSEL").toUpperCase() as "CAROUSEL" | "VIDEO";
 
@@ -56,9 +61,10 @@ async function main() {
   console.log(`\nPilar que toca por rotación: ${pilar ?? "(sin pilares configurados)"}\n`);
 
   console.log(`Voz que toca: (${registro}) ${NOMBRES_VOZ[registro]}`);
-  console.log(`Le habla a: ${audienciaDe(pilar) === "candidatos" ? "personas que buscan trabajo" : "empresas"}`);
+  if (ideaPropia) console.log(`Idea a probar: ${ideaPropia}`);
+  console.log(`Le habla a: ${audienciaDe(ideaPropia ?? pilar) === "candidatos" ? "personas que buscan trabajo" : "empresas"}`);
   console.log("");
-  const idea = await generateIdeaWithAI(business, type, recentTitles, undefined, pilar, turno);
+  const idea = await generateIdeaWithAI(business, type, recentTitles, ideaPropia, ideaPropia ? undefined : pilar, turno);
 
   console.log("─".repeat(70));
   console.log(`PILAR   : ${idea.pillar}`);

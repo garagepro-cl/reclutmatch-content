@@ -5,7 +5,7 @@
  *   npm run test-audiencia
  */
 import type { Business } from "@prisma/client";
-import { audienciaDe, marcarPilar, negocioParaAudiencia, lectorDe, whatsappCandidatos, cerrarCaption } from "../lib/ideas/audiencia";
+import { audienciaDe, marcarPilar, negocioParaAudiencia, lectorDe, whatsappCandidatos, cerrarCaption, servicioCandidatos } from "../lib/ideas/audiencia";
 import { vozDeMarca } from "../lib/ideas/voz";
 import { styleWrap } from "../lib/render/carousel";
 
@@ -80,6 +80,16 @@ chk(capCand.includes("💬 Escríbele a Andrea por WhatsApp: +56 9 1234 5678") &
 chk(cerrarCaption(conWsp({ whatsappCandidatos: "56912345678" }), "fit empresarial", "Texto.") === "Texto.",
   "caption de empresas NO lleva el WhatsApp de Andrea");
 chk(cerrarCaption(negocio, "Candidatos: x", "Texto.") === "Texto.", "sin número cargado, el caption no cambia");
+
+
+// 7. Descripción del servicio para candidatos (roleplay, 28-oct-2026)
+const serv = servicioCandidatos(negocio);
+chk(serv.includes("roleplay") && serv.includes("entrevista simulada"), "el servicio por defecto es el roleplay");
+chk(serv.includes("No inventes duración, precio, modalidad"), "prohíbe inventar detalles del servicio");
+const servPropio = servicioCandidatos({ ...negocio, brandJson: JSON.stringify({ servicioCandidatos: "Roleplay de 45 minutos por videollamada con Andrea." }) } as Business);
+chk(servPropio.includes("45 minutos por videollamada") && !servPropio.includes("es práctica: un roleplay"),
+  "Andrea puede reemplazar la descripción desde brandJson");
+chk(servicioCandidatos({ ...negocio, brandJson: "{roto" } as Business).includes("roleplay"), "brandJson roto -> descripción por defecto");
 
 console.log(fallas === 0 ? "\nTodo en orden." : `\n${fallas} fallas`);
 process.exit(fallas === 0 ? 0 : 1);

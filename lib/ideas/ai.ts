@@ -5,7 +5,7 @@ import { parseTopics } from "../brands";
 import { listPhotos } from "../photos";
 import { seasonContext } from "../season";
 import { vozDeMarca, elegirRegistro } from "./voz";
-import { audienciaDe, lectorDe, marcarPilar, negocioParaAudiencia } from "./audiencia";
+import { audienciaDe, lectorDe, marcarPilar, negocioParaAudiencia, servicioCandidatos } from "./audiencia";
 
 const SLIDE_SCHEMA = {
   type: "object",
@@ -125,6 +125,8 @@ export async function generateIdeaWithAI(
     `(${business.tagline}). Descripción del negocio: ${business.description}\n\n` +
     `El contenido se publica en LinkedIn (página de empresa) e Instagram. ` +
     lectorDe(audiencia) +
+    // Qué se le ofrece a quien busca trabajo (el roleplay), contado siempre igual.
+    (audiencia === "candidatos" ? servicioCandidatos(business) : "") +
     // Antes: «tono profesional-cercano y con autoridad técnica», una descripción
     // abstracta que la IA rellena con voz de consultora. Ahora describe quién habla.
     vozDeMarca(registro, audiencia) +
